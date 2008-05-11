@@ -1,0 +1,6 @@
+setup.py
+texpreview.py
+Texpreview/ColorPrinter.py
+Texpreview/Texfile.py
+Texpreview/TexpreviewPrinter.py
+Texpreview/__init__.py
