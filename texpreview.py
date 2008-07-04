@@ -474,11 +474,13 @@ def configure_output(options_dict):
             Out.activate_color()
     if options_dict.has_key('verbosity'):
         try:
-            Out.verbosity = int(options_dict['verbosity'])
-            Out.write("Set verbosity to %s\n" % Out.verbosity, VERB_DEBUG)
+            Out.streams['direct']['verbosity'] = int(options_dict['verbosity'])
+            Out.write("Set verbosity to %s\n" \
+                               % Out.streams['direct']['verbosity'], VERB_DEBUG)
         except ValueError:
             Out.write("Verbosity was not an integer in configure_output\n", \
                       VERB_WARN)
+    # TODO: do the same thing with a compiler-verbosity
 
 def main():
     """Command line program for compiling tex files """

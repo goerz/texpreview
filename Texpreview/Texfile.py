@@ -589,6 +589,7 @@ class Texfile:
         return self._watchfiletimes.keys()
 
 
+# TODO: Move this to its own file
 class CompilerOutputPrinter:
     """ Pretty print the output of the compiler and other tools.
         Also, parse the output and set flags on what has to be done
