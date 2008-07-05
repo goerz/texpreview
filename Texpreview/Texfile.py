@@ -29,7 +29,7 @@ import subprocess
 import time
 import shutil
 from glob import glob
-from CompilerOutputPrinter import CompilerOutputPrinter
+import CompilerOutputPrinter
 import TexpreviewPrinter as Out
 VERB_SILENT = Out.VERB_SILENT
 VERB_ERR    = Out.VERB_ERR
@@ -113,7 +113,6 @@ class Texfile:
             if not os.path.isfile(self._basename + ".tex"):
                 Out.write("The file %s that " % (self.options['filename'])\
                           + "you want to compile doesn't exist.\n", VERB_ERR)
-        self._printer = CompilerOutputPrinter() # pretty printer
         self._references = {} # These four dicts map filenames to
         self._labels = {}     # lists of references, labels,
         self._citations = {}  # citations, and index items that
@@ -176,8 +175,10 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            self._printer.mode = 'bibtex'
-            self._printer.write(bibtexprocess.stdout)
+            parser = CompilerOutputPrinter.BibTexParser(bibtexprocess.stdout)
+            fatal, error, warning = parser.parseStream()
+            # TODO: print out fatal, error, warning (for all the parsers, not
+            # just this one)
             while True:
                 time.sleep(1)
                 exitcode = bibtexprocess.poll()
@@ -235,8 +236,8 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            self._printer.mode = 'makeindex'
-            self._printer.write(makeindexprocess.stdout)
+            parser = CompilerOutputPrinter.TexParser(makeindexprocess.stdout)
+            fatal, error, warning = parser.parseStream()
             while True:
                 time.sleep(1)
                 exitcode = makeindexprocess.poll()
@@ -370,8 +371,8 @@ class Texfile:
                         stdout=subprocess.PIPE, \
                         stdin=open(os.devnull)
                     )
-                self._printer.mode = 'extracompiler'
-                self._printer.write(extracompilerprocess.stdout)
+                parser = CompilerOutputPrinter.TexParser(extracompilerprocess.stdout)
+                fatal, error, warning = parser.parseStream()
                 while True:
                     time.sleep(1)
                     exitcode = extracompilerprocess.poll()
@@ -408,8 +409,8 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            self._printer.mode = 'latex'
-            self._printer.write(latexprocess.stdout)
+            parser = CompilerOutputPrinter.LaTexParser(latexprocess.stdout)
+            fatal, error, warning = parser.parseStream()
             while True:
                 time.sleep(1)
                 exitcode = latexprocess.poll()
