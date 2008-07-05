@@ -32,16 +32,33 @@
     The module has the following attributes:
         streams         Dictionary of stream names. By default, the following 
                         streams are defined:
-        
-        streams = {'direct' : { 'verbosity'  : DEFAULT_VERBOSITY,
-                                'handle'     : sys.stderr
-                              },
-                    'sub'   : { 'verbosity'  : VERB_STATUS,
-                                'handle'     : sys.stderr
-                              }
-                  }
+                        
+                        streams = {
+                            'direct' : { 
+                                'verbosity'  : DEFAULT_VERBOSITY,
+                                'handle' : sys.stderr,
+                                'styles' : { 
+                                    VERB_SILENT : ...
+                                    VERB_ERR    : ...
+                                    VERB_WARN   : ...
+                                    VERB_STATUS : ...
+                                    VERB_DEBUG  : ...
+                                            }
+                                        },
+                            'sub'    : { 
+                                'verbosity'  : VERB_STATUS,
+                                'handle' : sys.stdout,
+                                'styles' : { 
+                                    VERB_SILENT : ...
+                                    VERB_ERR    : ...
+                                    VERB_WARN   : ...
+                                    VERB_STATUS : ...
+                                    VERB_DEBUG  : ...
+                                            }
+                                    }
+                                }
                     
-       default_stream   The name of the stream that is used, when no explicit 
+       default_stream   The name of the stream that is used when no explicit 
                         stream is given with a call to the print method.
     
     The module also defines a number of constants for the levels. While the
@@ -78,13 +95,19 @@
 
 import sys
 
+def nocolored(text, color=None, on_color=None, attrs=None):
+    return text
+
 try:
-    from termcolor import colored
+    from termcolor import colored as termcolored
     _colors_available = True
 except ImportError:
-    def colored(*args):
-        return args[0]
+    termcolored = nocolored
     _colors_available = False
+
+colored = nocolored # the 'colored' function should point to either 
+                    # 'nocolored' or 'termcolored', depending on
+                    # whether or not color is activated.
 
 # Verbosity constants
 VERB_SILENT = 0
@@ -97,55 +120,32 @@ DEFAULT_VERBOSITY = VERB_STATUS
 
 
 
-streams = {'direct' : { 'verbosity'  : DEFAULT_VERBOSITY,
-                        'handle' : sys.stderr
-                      },
-           'sub'    : { 'verbosity'  : VERB_STATUS,
-                        'handle' : sys.stderr
-                      }
-           }
+streams = {
+    'direct' : { 
+        'verbosity'  : DEFAULT_VERBOSITY,
+        'handle' : sys.stderr,
+        'styles' : { 
+            VERB_SILENT : lambda text: colored(text, attrs=['bold']),
+            VERB_ERR    : lambda text: colored(text, 'red', attrs=['bold']),
+            VERB_WARN   : lambda text: colored(text, 'blue', attrs=['bold']),
+            VERB_STATUS : lambda text: colored(text, attrs=['bold']),
+            VERB_DEBUG  : lambda text: colored(text, attrs=['bold'])
+                    }
+                },
+    'sub'    : { 
+        'verbosity'  : VERB_STATUS,
+        'handle' : sys.stdout,
+        'styles' : { 
+            VERB_SILENT : lambda text: colored(text),
+            VERB_ERR    : lambda text: colored(text, 'red'),
+            VERB_WARN   : lambda text: colored(text, 'blue'),
+            VERB_STATUS : lambda text: colored(text),
+            VERB_DEBUG  : lambda text: colored(text)
+                    }
+               }
+          }
 
 default_stream = 'direct'
-
-def _silent_style(text):
-    """ Set the formatting for level VERB_SILENT """
-    if _color:
-        return colored(text)
-    else:
-        return text
-def _critical_style(text):
-    """ Set the formatting for level VERB_ERR """
-    if _color:
-        return colored(text, 'red')
-    else:
-        return text
-def _warning_style(text):
-    """ Set the formatting for level VERB_WARN """
-    if _color:
-        return colored(text, 'blue')
-    else:
-        return text
-def _status_style(text):
-    """ Set the formatting for level VERB_STATUS """
-    if _color:
-        return colored(text)
-    else:
-        return text
-def _debug_style(text):
-    """ Set the formatting for level VERB_DEBUG """
-    if _color:
-        return colored(text)
-    else:
-        return text
-
-_styles = { VERB_SILENT : _silent_style,
-            VERB_ERR    : _critical_style,
-            VERB_WARN   : _warning_style,
-            VERB_STATUS : _status_style,
-            VERB_DEBUG  :_debug_style
-            }
-
-_color = False
 
 
 
@@ -160,16 +160,20 @@ def write(text, level=DEFAULT_VERBOSITY, stream=None):
         raise KeyError("%s is not a registered name for a stream" % stream)
     verbosity = streams[stream]['verbosity']
     if level <= verbosity:
-        streams[stream]['handle'].write(_styles[level](text))
+        streams[stream]['handle'].write(streams[stream]['styles'][level](text))
 
 def activate_color(color=True):
     """ Turn color output on (or off)
         Turning color on means that formatting takes effect. Colors are
         done with ANSI codes. If your terminal sucks, don't turn on colors.
     """
-    if _colors_available:
-        global _color
-        _color = color
+    global colored
+    if color:
+        if _colors_available:
+            colored = termcolored
+        else:
+            sys.stderr.write("Module 'termcolor' is missing, color " \
+                            + "capabilities are not available")
+            colored = nocolored
     else:
-        sys.stderr.write("Module 'termcolor' is missing, color " \
-                         + "capabilities are not available")
+       colored = nocolored
