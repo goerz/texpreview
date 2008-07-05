@@ -29,6 +29,7 @@ import subprocess
 import time
 import shutil
 from glob import glob
+from CompilerOutputPrinter import CompilerOutputPrinter
 import TexpreviewPrinter as Out
 VERB_SILENT = Out.VERB_SILENT
 VERB_ERR    = Out.VERB_ERR
@@ -46,9 +47,6 @@ BINARYEXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.eps',
 BIBEXTENSIONS = ['.bib', '.bst']
 
 
-def set_out(instance_of_texpreviewprinter):
-    """ set Out """
-    Out = instance_of_texpreviewprinter
 
 class Texfile:
     """ Class that represents a tex file and all it's compile options
@@ -587,27 +585,6 @@ class Texfile:
     def watchfilelist(self):
         """ Return the list of watchfiles """
         return self._watchfiletimes.keys()
-
-
-# TODO: Move this to its own file
-class CompilerOutputPrinter:
-    """ Pretty print the output of the compiler and other tools.
-        Also, parse the output and set flags on what has to be done
-
-        Modes: 'none', 'latex', 'bibtex', 'makeindex'
-        Flags: 'need_latex', 'need_bibtex', 'need_makeindex'
-    """
-    def __init__(self, color=False):
-        self.color = color
-        self.mode = 'none'
-        self.output = sys.stdout
-    def write(self, infile):
-        """ Print out the text found in the open filehandle 'infile'
-        """
-        for line in infile:
-                # TODO: expand this
-            self.output.write(line)
-
 
 
 def extract_element(fullstring, position):
