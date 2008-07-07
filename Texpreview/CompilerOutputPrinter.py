@@ -122,6 +122,7 @@ class LaTexParser(TexParser):
             re.compile('^This is') : self.info,
             re.compile('^Document Class') : self.info,
             re.compile('^Latexmk') : self.info,
+            re.compile(r'^(Over|Under)full \\[hv]box') : self.boxwarning,
             re.compile('Run number') : self.newRun,
             re.compile('.*\((\.\/.*\.tex)') : self.detectNewFile,
             re.compile('^\s+file:line:error style messages enabled') : self.detectFileLineErr,
@@ -171,7 +172,23 @@ class LaTexParser(TexParser):
         text = '[' + make_link(os.getcwd()+self.currentFile[1:], m.group(1)) + '] '+line
         Out.write(text, VERB_WARN, stream='sub')
         self.numWarns += 1
-    
+
+    def boxwarning(self,m,line):
+        Out.write("DEBUG: LaTexparser.boxwarning()\n", VERB_STATUS, stream='sub')
+        Out.write(line, VERB_WARN, stream='sub')
+        self.numWarns += 1
+
+    def warning(self,m,line):
+        Out.write("DEBUG: LaTexparser.warning()\n", VERB_STATUS, stream='sub')
+        latexWarningMsg = line
+        line = self.input_stream.readline()
+        while len(line) > 1:
+            latexWarningMsg = latexWarningMsg+line
+            line = self.input_stream.readline()
+        Out.write(latexWarningMsg, VERB_WARN, stream='sub')
+        self.numWarns += 1
+
+   
     def handleError(self,m,line):
         Out.write("DEBUG: LaTexparser.handleError()\n", VERB_STATUS, stream='sub')
         latexErrorMsg = 'Latex Error: [' + make_link(os.getcwd()+'/'+m.group(1),m.group(2)) +  '] ' + m.group(1)+":"+m.group(2) + m.group(3) + "\n"
@@ -179,7 +196,17 @@ class LaTexParser(TexParser):
         while len(line) > 1:
             latexErrorMsg = latexErrorMsg+line
             line = self.input_stream.readline()
-        Out.write(latexErrorMsg, VERB_WARN, stream='sub')
+        Out.write(latexErrorMsg, VERB_ERR, stream='sub')
+        self.numErrs += 1
+
+    def error(self,m,line):
+        Out.write("DEBUG: LaTexparser.error()\n", VERB_STATUS, stream='sub')
+        latexErrorMsg = line
+        line = self.input_stream.readline()
+        while len(line) > 1:
+            latexErrorMsg = latexErrorMsg+line
+            line = self.input_stream.readline()
+        Out.write(latexErrorMsg, VERB_ERR, stream='sub')
         self.numErrs += 1
 
     def linkToLog(self,m,line):
