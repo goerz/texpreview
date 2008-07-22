@@ -27,11 +27,9 @@
 """
 
 
-import sys
 import re
-from os.path import basename
 import os
-from struct import *
+from struct import unpack
 import TexpreviewPrinter as Out
 VERB_SILENT = Out.VERB_SILENT
 VERB_ERR    = Out.VERB_ERR
@@ -43,13 +41,14 @@ VERB_DEBUG  = Out.VERB_DEBUG
 numRuns = 0
 
 def percent_escape(str):
-	return re.sub('[\x80-\xff /&]', lambda x: '%%%02X' % unpack('B', x.group(0))[0], str)
+    return re.sub('[\x80-\xff /&]', \
+                  lambda x: '%%%02X' % unpack('B', x.group(0))[0], str)
 
 def make_link(file, line):
-	return 'file: ' + percent_escape(file) + '; line=' + line
+    return 'file: ' + percent_escape(file) + '; line=' + line
 
 def shell_quote(string):
-	return '"' + re.sub(r'([`$\\"])', r'\\\1', string) + '"'
+    return '"' + re.sub(r'([`$\\"])', r'\\\1', string) + '"'
 
 class TexParser(object):
     """Master Class for Parsing Tex Typesetting Streams"""
@@ -62,7 +61,7 @@ class TexParser(object):
         self.numWarns = 0
         self.isFatal = False
         self.patterns = {}
-        
+
     def parseStream(self):
         """docstring for parseStream"""
         line = self.input_stream.readline()
@@ -75,49 +74,49 @@ class TexParser(object):
             for pat in self.patterns.keys():
                 myMatch = pat.match(line)
                 if myMatch:
-                    self.patterns[pat](myMatch,line)
+                    self.patterns[pat](myMatch, line)
                     foundMatch = True
                     break
-            
+
             if self.verbose and not foundMatch:
-                Out.write("DEBUG: writing 'verbose' line\n", VERB_STATUS, stream='sub')
+                Out.write("DEBUG: writing 'verbose' line\n", VERB_DEBUG, stream='sub')
                 Out.write(line, VERB_STATUS, stream='sub')
-            
+
             line = self.input_stream.readline()
 
         return self.isFatal, self.numErrs, self.numWarns
 
-    def info(self,m,line):
-        Out.write("DEBUG: Texparser.info()\n", VERB_STATUS, stream='sub')
+    def info(self, m, line):
+        Out.write("DEBUG: Texparser.info()\n", VERB_DEBUG, stream='sub')
         Out.write(line, VERB_STATUS, stream='sub')
-    
-    def error(self,m,line):
-        Out.write("DEBUG: Texparser.error()\n", VERB_STATUS, stream='sub')
+
+    def error(self, m, line):
+        Out.write("DEBUG: Texparser.error()\n", VERB_DEBUG, stream='sub')
         Out.write(line, VERB_ERR, stream='sub')
         self.numErrs += 1
 
-    def warning(self,m,line):
-        Out.write("DEBUG: Texparser.warning()\n", VERB_STATUS, stream='sub')
+    def warning(self, m, line):
+        Out.write("DEBUG: Texparser.warning()\n", VERB_DEBUG, stream='sub')
         Out.write(line, VERB_WARN, stream='sub')
         self.numWarns += 1
 
 class BibTexParser(TexParser):
     """Parse and format Error Messages from bibtex"""
     def __init__(self, btex, verbose=True):
-        super(BibTexParser, self).__init__(btex,verbose)
+        super(BibTexParser, self).__init__(btex, verbose)
         self.patterns = { 
             re.compile("Warning--I didn't find a database entry") : self.warning,
             re.compile(r'I found no \\\w+ command') : self.error,            
             re.compile('---') : self.finishRun
         }
-    
-    def finishRun(self,m,line):
+
+    def finishRun(self, m, line):
         self.done = True
 
 class LaTexParser(TexParser):
     """Parse Output From Latex"""
     def __init__(self, input_stream, verbose=True):
-        super(LaTexParser, self).__init__(input_stream,verbose)
+        super(LaTexParser, self).__init__(input_stream, verbose)
         self.patterns = {
             re.compile('^This is') : self.info,
             re.compile('^Document Class') : self.info,
@@ -141,10 +140,10 @@ class LaTexParser(TexParser):
             re.compile('^Error: pdflatex') : self.pdfLatexError,
             re.compile('\!.*') : self.handleOldStyleErrors
         }
-                
 
-    def newRun(self,m,line):
-        Out.write("DEBUG: LaTexparser.newRun()\n", VERB_STATUS, stream='sub')
+
+    def newRun(self, m, line):
+        Out.write("DEBUG: LaTexparser.newRun()\n", VERB_DEBUG, stream='sub')
         global numRuns
         text =  self.numErrs + ' Errors ' + self.numWarns + " Warnings in this run.\n"
         Out.write(text, VERB_STATUS, stream='sub')
@@ -152,34 +151,34 @@ class LaTexParser(TexParser):
         self.numErrs = 0
         numRuns += 1
 
-    def detectNewFile(self,m,line):
-        Out.write("DEBUG: LaTexparser.detectNewFile()\n", VERB_STATUS, stream='sub')
+    def detectNewFile(self, m, line):
+        Out.write("DEBUG: LaTexparser.detectNewFile()\n", VERB_DEBUG, stream='sub')
         self.currentFile = m.group(1)
         text = "\nTypesetting: " + self.currentFile + "\n\n"
         Out.write(text, VERB_STATUS, stream='sub')
 
-    def detectFileLineErr(self,m,line):
-        Out.write("DEBUG: LaTexparser.detectFileLineErr()\n", VERB_STATUS, stream='sub')
+    def detectFileLineErr(self, m, line):
+        Out.write("DEBUG: LaTexparser.detectFileLineErr()\n", VERB_DEBUG, stream='sub')
         self.fileLineErrors = True
 
-    def detectInclude(self,m,line):
-        Out.write("DEBUG: LaTexparser.detectInclude()\n", VERB_STATUS, stream='sub')
+    def detectInclude(self, m, line):
+        Out.write("DEBUG: LaTexparser.detectInclude()\n", VERB_DEBUG, stream='sub')
         text =  "    Including: " + m.group(1) + "\n"
         Out.write(text, VERB_STATUS, stream='sub')
 
-    def handleWarning(self,m,line):
-        Out.write("DEBUG: LaTexparser.handleWarning()\n", VERB_STATUS, stream='sub')
+    def handleWarning(self, m, line):
+        Out.write("DEBUG: LaTexparser.handleWarning()\n", VERB_DEBUG, stream='sub')
         text = '[' + make_link(os.getcwd()+self.currentFile[1:], m.group(1)) + '] '+line
         Out.write(text, VERB_WARN, stream='sub')
         self.numWarns += 1
 
-    def boxwarning(self,m,line):
-        Out.write("DEBUG: LaTexparser.boxwarning()\n", VERB_STATUS, stream='sub')
+    def boxwarning(self, m, line):
+        Out.write("DEBUG: LaTexparser.boxwarning()\n", VERB_DEBUG, stream='sub')
         Out.write(line, VERB_WARN, stream='sub')
         self.numWarns += 1
 
-    def warning(self,m,line):
-        Out.write("DEBUG: LaTexparser.warning()\n", VERB_STATUS, stream='sub')
+    def warning(self, m, line):
+        Out.write("DEBUG: LaTexparser.warning()\n", VERB_DEBUG, stream='sub')
         latexWarningMsg = line
         line = self.input_stream.readline()
         while len(line) > 1:
@@ -188,10 +187,12 @@ class LaTexParser(TexParser):
         Out.write(latexWarningMsg, VERB_WARN, stream='sub')
         self.numWarns += 1
 
-   
-    def handleError(self,m,line):
-        Out.write("DEBUG: LaTexparser.handleError()\n", VERB_STATUS, stream='sub')
-        latexErrorMsg = 'Latex Error: [' + make_link(os.getcwd()+'/'+m.group(1),m.group(2)) +  '] ' + m.group(1)+":"+m.group(2) + m.group(3) + "\n"
+
+    def handleError(self, m, line):
+        Out.write("DEBUG: LaTexparser.handleError()\n", VERB_DEBUG, stream='sub')
+        latexErrorMsg = 'Latex Error: [' + make_link(os.getcwd() \
+                         + '/' + m.group(1),m.group(2)) +  '] ' + m.group(1) \
+                         + ":" + m.group(2) + m.group(3) + "\n"
         line = self.input_stream.readline()
         while len(line) > 1:
             latexErrorMsg = latexErrorMsg+line
@@ -199,8 +200,8 @@ class LaTexParser(TexParser):
         Out.write(latexErrorMsg, VERB_ERR, stream='sub')
         self.numErrs += 1
 
-    def error(self,m,line):
-        Out.write("DEBUG: LaTexparser.error()\n", VERB_STATUS, stream='sub')
+    def error(self, m, line):
+        Out.write("DEBUG: LaTexparser.error()\n", VERB_DEBUG, stream='sub')
         latexErrorMsg = line
         line = self.input_stream.readline()
         while len(line) > 1:
@@ -209,31 +210,31 @@ class LaTexParser(TexParser):
         Out.write(latexErrorMsg, VERB_ERR, stream='sub')
         self.numErrs += 1
 
-    def linkToLog(self,m,line):
-        Out.write("DEBUG: LaTexparser.linkToLog)\n", VERB_STATUS, stream='sub')
+    def linkToLog(self, m, line):
+        Out.write("DEBUG: LaTexparser.linkToLog)\n", VERB_DEBUG, stream='sub')
         text = 'logfile: ' + m.group(1) + "\n"
         Out.write(text, VERB_STATUS, stream='sub')
 
-    def startBibtex(self,m,line):
-        Out.write("DEBUG: LaTexparser.startBibtex()\n", VERB_STATUS, stream='sub')
+    def startBibtex(self, m, line):
+        Out.write("DEBUG: LaTexparser.startBibtex()\n", VERB_DEBUG, stream='sub')
         text = "\n" + line[:-1] + "\n"
         Out.write(text, VERB_STATUS, stream='sub')
         bp = BibTexParser(self.input_stream,self.verbose)
         self.input_stream.readline() # swallow the following line of '---'
-        f,e,w = bp.parseStream()
+        f, e, w = bp.parseStream()
         self.numErrs += e
         self.numWarns += w
 
-    def handleOldStyleErrors(self,m,line):
-        Out.write("DEBUG: LaTexparser.handleOldStyleErrors()\n", VERB_STATUS, stream='sub')
+    def handleOldStyleErrors(self, m, line):
+        Out.write("DEBUG: LaTexparser.handleOldStyleErrors()\n", VERB_DEBUG, stream='sub')
         if re.match('\! LaTeX Error:', line):
-            Out.write(text, VERB_ERR, stream='sub')
+            Out.write(line, VERB_ERR, stream='sub')
             self.numErrs += 1
         else:
-            Out.write(text, VERB_WARN, stream='sub')
+            Out.write(line, VERB_WARN, stream='sub')
             self.numWarns += 1
 
-    def pdfLatexError(self,m,line):
+    def pdfLatexError(self, m, line):
         """docstring for pdfLatexError"""
         Out.write("DEBUG: LaTexparser.pdfLatexError()\n", VERB_STATUS, stream='sub')
         self.numErrs += 1
