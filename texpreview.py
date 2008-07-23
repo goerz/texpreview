@@ -99,7 +99,9 @@ Options are:
                                   messages; at '4', there is debug
                                   information.
 
-  --debug                         Equivalent to '--verbosity=4'
+  --cverbosity=2                  Like --verbosity, but for compiler ouput
+
+  --debug                         Equivalent to '--verbosity=4 --cverbosity=4'
 
   --bibtex                        Run the texfile through bibtex.
                                   (Default in smart mode)
@@ -249,9 +251,6 @@ two levels of output.
 #       or "did not compile" message
 # TODO: try to make main() shorter.
 # TODO: maybe: allow to filter the output of latex, e.g. show only errors
-# TODO: add color
-# TODO: maybe: add debug option that lists options and other info as program
-#       runs. Alternatively: allow verbosity levels by command line switches
 # TODO: allow precommand and postcommand to use % wildcard.
 # TODO: prevent a file from being on the compile list more than once
 # TODO: maybe --bibtex and --makeindex should just have no effect in smart
@@ -264,6 +263,7 @@ two levels of output.
 #       mode
 # TODO: bibtex fails even though it shouldn't
 # TODO: piping into /dev/null causes the program to fail.
+# TODO: critical error in latex code comes out as warning (i.e. in blue)
 
 import sys
 import getopt
@@ -312,7 +312,7 @@ def cmdline_to_dict():
                        "nobibtex", "precommand=", "postcommand=",
                        'cleanup=', "noautowatch", "autowatch", "smart",
                        "stupid", "extracompiler=", "verbosity=", "debug",
-                       "color", "nocolor"])
+                       "cverbosity=", "color", "nocolor"])
     except getopt.GetoptError, details:
         Out.write(details + "\n", VERB_ERR)
         sys.exit(2)
@@ -383,6 +383,17 @@ def cmdline_to_dict():
                 Out.write("verbosity has to be an integer between %i and %i" \
                           % (VERB_SILENT, VERB_DEBUG), VERB_WARN)
             continue
+        if opt == "--cverbosity":
+            try:
+                cverbosity = int(value)
+                cmdlineoptions['cverbosity'] = cverbosity
+                if cverbosity < VERB_SILENT or cverbosity > VERB_DEBUG:
+                    raise ValueError
+            except ValueError:
+                Out.write("cverbosity has to be an integer between %i and %i" \
+                          % (VERB_SILENT, VERB_DEBUG), VERB_WARN)
+            continue
+
         if opt == "--smart":
             cmdlineoptions['smart'] = True
             if not cmdlineoptions.has_key('bibtex'):
@@ -399,6 +410,7 @@ def cmdline_to_dict():
             continue
         if opt == "--debug":
             cmdlineoptions['verbosity'] = VERB_DEBUG
+            cmdlineoptions['cverbosity'] = VERB_DEBUG
             continue
     cmdlineoptions['files'] = files
     return cmdlineoptions
@@ -480,7 +492,15 @@ def configure_output(options_dict):
         except ValueError:
             Out.write("Verbosity was not an integer in configure_output\n", \
                       VERB_WARN)
-    # TODO: do the same thing with a compiler-verbosity
+    if options_dict.has_key('cverbosity'):
+        try:
+            Out.streams['sub']['verbosity'] = int(options_dict['cverbosity'])
+            Out.write("Set cverbosity to %s\n" \
+                               % Out.streams['sub']['verbosity'], VERB_DEBUG)
+        except ValueError:
+            Out.write("Cverbosity was not an integer in configure_output\n", \
+                      VERB_WARN)
+
 
 def main():
     """Command line program for compiling tex files """
@@ -596,6 +616,7 @@ def hard_defaults():
     options['precommand'] = ''
     options['postcommand'] = ''
     options['verbosity'] = VERB_STATUS
+    options['cverbosity'] = VERB_WARN
     options['color'] = False
     options['cleanup'] = '%.dvi %.backup %.blg %.log %.toc %.bbl %.out ' \
                               + '%.bak %.snm %.idx %.ilg %.ind %.nav %.aux ' \
@@ -631,6 +652,7 @@ def create_configfile(configfilename=None):
             configfile.write("autowatch = True\n")
             configfile.write("color = False\n")
             configfile.write("verbosity = %s\n" % VERB_STATUS)
+            configfile.write("cverbosity = %s\n" % VERB_WARN)
             configfile.write("exit_after_compile = False\n")
             configfile.write("cleanup = %.dvi %.backup %.blg %.log " \
                              + "%.bbl %.out %.bak %.snm %.idx %.ilg %.ind " \
@@ -707,6 +729,7 @@ def read_configfiles(options, configfiles):
                 'smart' : parser.get,
                 'no_cleanup' : parser.getboolean,
                 'verbosity' : parser.getint,
+                'cverbosity' : parser.getint,
                 'color' : parser.getboolean
             }
             for field in fields:
@@ -871,7 +894,7 @@ def transfer_options(cmdlineoptions, options):
             'makeindex', 'bibtex', 'makeindexbin', 'bibtexbin',
             'no_cleanup', 'exit_after_compile', 'viewer', 'precommand',
             'postcommand', 'cleanup', 'autowatch', 'extracompiler', 'smart',
-            'verbosity', 'color']
+            'cverbosity', 'verbosity', 'color']
     for key in keys:
         if cmdlineoptions.has_key(key):
             options[key] = cmdlineoptions[key]
