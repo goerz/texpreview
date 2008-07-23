@@ -371,7 +371,8 @@ class Texfile:
                         stdout=subprocess.PIPE, \
                         stdin=open(os.devnull)
                     )
-                parser = CompilerOutputPrinter.TexParser(extracompilerprocess.stdout)
+                parser = \
+                    CompilerOutputPrinter.TexParser(extracompilerprocess.stdout)
                 fatal, error, warning = parser.parseStream()
                 while True:
                     time.sleep(1)
@@ -464,7 +465,22 @@ class Texfile:
         """
         changed = False
         for watchfile in self._watchfiletimes.keys():
-            if self._watchfiletimes[watchfile] < os.path.getmtime(watchfile):
+            trials = 0
+            # check if file has been renewed: some editors delete the file
+            # temporarily while it is being saved, so we make up to 10 trials
+            # to get the current modification time.
+            while True:
+                trials += 1
+                try:
+                    newer = ( self._watchfiletimes[watchfile] < \
+                            os.path.getmtime(watchfile) )
+                    break
+                except OSError, data:
+                    Out.write(str(data) + "\n", VERB_WARN)
+                    time.sleep(1)
+                    if trials > 10:
+                        raise
+            if newer:
                 changed = True
                 Out.write("%s has changed.\n" % watchfile)
                 if self.options['smart']:
