@@ -1,5 +1,7 @@
 setup.py
+COPYING
 texpreview.py
 Texpreview/Texfile.py
+Texpreview/CompilerOutputPrinter.py
 Texpreview/TexpreviewPrinter.py
 Texpreview/__init__.py

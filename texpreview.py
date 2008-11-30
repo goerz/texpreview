@@ -250,8 +250,6 @@ two levels of output.
 # TODO: parse output of latex commands, and display a "Compiled with warnings"
 #       or "did not compile" message
 # TODO: try to make main() shorter.
-# TODO: maybe: allow to filter the output of latex, e.g. show only errors
-# TODO: allow precommand and postcommand to use % wildcard.
 # TODO: prevent a file from being on the compile list more than once
 # TODO: maybe --bibtex and --makeindex should just have no effect in smart
 #       mode, except that they are used as option for an unconditional new
