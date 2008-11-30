@@ -102,6 +102,9 @@ try:
     from termcolor import colored as termcolored
     _colors_available = True
 except ImportError:
+    print "Color not available!"
+    print "You need to install the termcolor module from"
+    print "http://pypi.python.org/pypi/termcolor/0.1\n"
     termcolored = nocolored
     _colors_available = False
 
@@ -176,4 +179,4 @@ def activate_color(color=True):
                             + "capabilities are not available")
             colored = nocolored
     else:
-       colored = nocolored
+        colored = nocolored
