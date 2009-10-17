@@ -128,22 +128,22 @@ streams = {
         'verbosity'  : DEFAULT_VERBOSITY,
         'handle' : sys.stderr,
         'styles' : { 
-            VERB_SILENT : lambda text: colored(text, attrs=['bold']),
+            VERB_SILENT : lambda text: nocolored(text),
             VERB_ERR    : lambda text: colored(text, 'red', attrs=['bold']),
             VERB_WARN   : lambda text: colored(text, 'blue', attrs=['bold']),
-            VERB_STATUS : lambda text: colored(text, attrs=['bold']),
-            VERB_DEBUG  : lambda text: colored(text, attrs=['bold'])
+            VERB_STATUS : lambda text: nocolored(text),
+            VERB_DEBUG  : lambda text: nocolored(text)
                     }
                 },
     'sub'    : { 
         'verbosity'  : VERB_STATUS,
         'handle' : sys.stdout,
         'styles' : { 
-            VERB_SILENT : lambda text: colored(text),
+            VERB_SILENT : lambda text: nocolored(text),
             VERB_ERR    : lambda text: colored(text, 'red'),
             VERB_WARN   : lambda text: colored(text, 'blue'),
-            VERB_STATUS : lambda text: colored(text),
-            VERB_DEBUG  : lambda text: colored(text)
+            VERB_STATUS : lambda text: nocolored(text),
+            VERB_DEBUG  : lambda text: nocolored(text)
                     }
                }
           }
