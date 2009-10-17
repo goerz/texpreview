@@ -19,8 +19,7 @@
 #    59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
 ############################################################################
 
-""" This module contains the Texfile class and the CompilerOutputPrinter
-    that is needed by it."""
+""" This module contains the Texfile class """
 
 import os
 import sys
@@ -29,7 +28,7 @@ import subprocess
 import time
 import shutil
 from glob import glob
-import CompilerOutputPrinter
+from CompilerOutputPrinter import CompilerOutputPrinter
 import TexpreviewPrinter as Out
 VERB_SILENT = Out.VERB_SILENT
 VERB_ERR    = Out.VERB_ERR
@@ -175,7 +174,7 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            parser = CompilerOutputPrinter.BibTexParser(bibtexprocess.stdout)
+            parser = CompilerOutputPrinter(bibtexprocess.stdout)
             fatal, error, warning = parser.parseStream()
             # TODO: print out fatal, error, warning (for all the parsers, not
             # just this one)
@@ -236,7 +235,7 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            parser = CompilerOutputPrinter.TexParser(makeindexprocess.stdout)
+            parser = CompilerOutputPrinter(makeindexprocess.stdout)
             fatal, error, warning = parser.parseStream()
             while True:
                 time.sleep(1)
@@ -372,7 +371,7 @@ class Texfile:
                         stdin=open(os.devnull)
                     )
                 parser = \
-                    CompilerOutputPrinter.TexParser(extracompilerprocess.stdout)
+                    CompilerOutputPrinter(extracompilerprocess.stdout)
                 fatal, error, warning = parser.parseStream()
                 while True:
                     time.sleep(1)
@@ -410,7 +409,7 @@ class Texfile:
                     stdout=subprocess.PIPE, \
                     stdin=open(os.devnull)
                 )
-            parser = CompilerOutputPrinter.LaTexParser(latexprocess.stdout)
+            parser = CompilerOutputPrinter(latexprocess.stdout)
             fatal, error, warning = parser.parseStream()
             while True:
                 time.sleep(1)
