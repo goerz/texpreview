@@ -571,13 +571,29 @@ class Texfile:
 
 
     def add_watchfile(self, watchfile_wc):
-        """ Add a watchfile or wildcard expression to the list of
-            watchfiles
+        """ Add a watchfile, wildcard expression, or shell backquote to the
+            list of watchfiles.
+
+            For example watchfile_wc could be any of the following:
+            images/fig1.pdf
+            images/*.tikz
+            `find . | grep tikz`
         """
         class WatchFileExistsException(Exception):
             """Raised internally if a watchfile is already on the watchlist"""
             pass
-        for watchfile in glob(watchfile_wc):
+        watchfilelist = []
+        if watchfile_wc.startswith('`'):
+            watchfile_wc = watchfile_wc[1:-1]
+            
+            pipe = subprocess.Popen(watchfile_wc, shell=True, bufsize=0, 
+                                    stdout=subprocess.PIPE).stdout
+            for file in pipe.readlines():
+                file = file.rstrip('\r\n')
+                watchfilelist.append(file)
+        else:
+            watchfilelist = glob(watchfile_wc)
+        for watchfile in watchfilelist:
             try:
                 if os.path.isfile(watchfile):
                     for existing_file in self._watchfiletimes.keys():
