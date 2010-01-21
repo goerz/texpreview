@@ -198,7 +198,7 @@ class Texfile:
             or \input) in the texfile """
         # TODO: move includepattern and inputtpattern to self._patterns
         includepattern = re.compile(r'\\include\{(?P<filename>.*?)\}')
-        inputpattern = re.compile(r'\\input\{(?P<filename>.*?)\}')
+        inputpattern = re.compile(r'\\input(TikZ)?\{(?P<filename>.*?)\}')
         result = []
         try:
             texfile = open(self._basename + ".tex")
