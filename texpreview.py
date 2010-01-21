@@ -172,9 +172,9 @@ The program makes use of config files that allow you to set
 default options for the command line switches.
 
 First, there is the global conf file in
-$HOME/.texpreview/CONFIGFILENAME
+$HOME/.texpreview/texpreview.cfg
 
-Second, there is a possible local CONFIGFILENAME file in the current
+Second, there is a possible local texpreview.cfg file in the current
 directory.
 
 Third, there can be an additional file given on the command line with
